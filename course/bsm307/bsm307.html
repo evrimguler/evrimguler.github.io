@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BSM 307 Ders Notları</title>
+<style>
+  body{font-family:Inter,system-ui,sans-serif;background:#0b1220;color:#e6eef8;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px}
+  .card{width:100%;max-width:560px;background:#0f1724;padding:22px;border-radius:10px;box-shadow:0 8px 30px rgba(2,6,23,.6)}
+  h1{margin:0 0 8px;color:#60a5fa;font-size:20px}
+  input[type=password]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+  button{margin-top:10px;width:100%;padding:10px;border-radius:8px;border:0;background:#60a5fa;color:#072235;font-weight:600;cursor:pointer}
+  #msg{min-height:18px;margin-top:8px;color:#ffb4b4}
+  #debug{margin-top:10px;font-size:12px;color:#9fbff9;white-space:pre-wrap;display:none}
+  .hidden{display:none}
+  ul{margin:12px 0 0;padding:0;list-style:none}
+  li{background:#071028;padding:10px;border-radius:8px;margin-bottom:8px}
+  a{color:#9ec9ff;text-decoration:none}
+</style>
+</head>
+<body>
+  <div class="card" role="main">
+    <h1>BSM 307 — Ders Notları</h1>
+    <p style="margin:0 0 12px;color:#bcd7ff">Parolayı girin (Büyük/küçük harf duyarlıdır).</p>
+
+    <input id="pw" type="password" placeholder="Parola giriniz" autocomplete="off" />
+    <button id="btn">Giriş</button>
+    <div id="msg"></div>
+
+    <div id="links" class="hidden" aria-hidden="true">
+      <ul>
+        <li><a href="https://ogrencibartinedu-my.sharepoint.com/:b:/g/personal/evrimguler_personel_bartin_edu_tr/EfHSy3gBTc1OtYgCPoI1c3EBdskzOsVdSKkaCWzjAFyD-w?e=7mO5Y3" download>Hafta 1 Notları - Ders Izlencesi (PDF)</a></li>
+        <!--<li><a href="NOTLAR/Hafta2.pdf" download>Hafta 2 Notları (PDF)</a></li>
+        <li><a href="NOTLAR/Hafta3.pdf" download>Hafta 3 Notları (PDF)</a></li>-->
+      </ul>
+    </div>
+
+    <div id="debug"></div>
+    
+  </div>
+
+<script>
+  const EXPECTED_HASH = "59dbcc732b02b90f16ae4987698b250d1418c5907c8affe6188904f177297665";
+
+  const pwInput = document.getElementById('pw');
+  const btn = document.getElementById('btn');
+  const msg = document.getElementById('msg');
+  const links = document.getElementById('links');
+  const debug = document.getElementById('debug');
+
+  async function sha256Hex(text){
+    const enc = new TextEncoder();
+    const data = enc.encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  async function checkPassword(){
+    msg.textContent = '';
+    debug.style.display = 'none';
+    const raw = pwInput.value;
+    const pw = (raw || "").trim();
+    if(!pw){ msg.textContent = 'Lütfen parola girin.'; return; }
+
+    if(!window.crypto || !crypto.subtle){
+      msg.textContent = 'Tarayıcınız Web Crypto API desteklemiyor veya sayfa güvenli bir context\'te (https/localhost) açılmadı.';
+      return;
+    }
+
+    try{
+      const h = await sha256Hex(pw);
+      debug.style.display = 'block';
+
+      if(h === EXPECTED_HASH){
+        // başarılı
+        links.classList.remove('hidden');
+        links.setAttribute('aria-hidden','false');
+        document.getElementById('pw').value = '';
+        msg.style.color = '#b7ffd6';
+        msg.textContent = 'Doğru parola — notlar gösteriliyor.';
+      } else {
+        msg.style.color = '#ffb4b4';
+        msg.textContent = 'Hatalı parola. Lütfen büyük/küçük harfe dikkat edin ve boşluk olmadığından emin olun.';
+      }
+    } catch(e){
+      msg.textContent = 'Hata: ' + (e && e.message ? e.message : e);
+    }
+  }
+
+  btn.addEventListener('click', checkPassword);
+  pwInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') checkPassword(); });
+</script>
+</body>
+</html>
